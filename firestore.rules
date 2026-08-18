@@ -1,0 +1,152 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default-deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isBootstrappedAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email == 'rahulprashad7@gmail.com' ||
+        (request.auth.token.email_verified == true && request.auth.token.email == 'rahulprashad7@gmail.com')
+      );
+    }
+
+    function isSuperAdmin() {
+      return isSignedIn() && (
+        isBootstrappedAdmin() ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'SUPER_ADMIN')
+      );
+    }
+
+    function isITStaffOrAdmin() {
+      return isSignedIn() && (
+        isSuperAdmin() ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+         (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['COMPANY_ADMIN', 'IT_STAFF', 'SUPER_ADMIN']))
+      );
+    }
+
+    // Validation Helpers
+    function isValidCompany(data) {
+      return data.id is string && isValidId(data.id) &&
+             data.name is string && data.name.size() <= 100 &&
+             data.code in ['AGIPL', 'ASSPL', 'ONYX'] &&
+             (!('fullName' in data) || (data.fullName is string && data.fullName.size() <= 150)) &&
+             (!('domain' in data) || (data.domain is string && data.domain.size() <= 100));
+    }
+
+    function isValidUser(data) {
+      return data.id is string && isValidId(data.id) &&
+             data.name is string && data.name.size() <= 100 &&
+             data.email is string && data.email.size() <= 120 &&
+             data.role in ['SUPER_ADMIN', 'COMPANY_ADMIN', 'IT_STAFF', 'EMPLOYEE'] &&
+             data.companyCode in ['ALL', 'AGIPL', 'ASSPL', 'ONYX'];
+    }
+
+    function isValidAsset(data) {
+      return data.id is string && isValidId(data.id) &&
+             data.assetTag is string && data.assetTag.size() <= 50 &&
+             data.name is string && data.name.size() <= 120 &&
+             data.category in ['LAPTOP', 'DESKTOP', 'SERVER', 'NETWORKING', 'MONITOR', 'PRINTER', 'SOFTWARE_LICENSE', 'PERIPHERAL', 'MOBILE'] &&
+             data.companyCode in ['AGIPL', 'ASSPL', 'ONYX'] &&
+             data.status in ['AVAILABLE', 'IN_USE', 'UNDER_MAINTENANCE', 'RESERVED', 'RETIRED', 'LOST'] &&
+             (!('specifications' in data) || (data.specifications is string && data.specifications.size() <= 500)) &&
+             (!('purchaseCost' in data) || (data.purchaseCost is number && data.purchaseCost >= 0));
+    }
+
+    function isValidTicket(data) {
+      return data.id is string && isValidId(data.id) &&
+             data.ticketNumber is string && data.ticketNumber.size() <= 40 &&
+             data.title is string && data.title.size() <= 150 &&
+             data.description is string && data.description.size() <= 1500 &&
+             data.category in ['HARDWARE', 'SOFTWARE', 'NETWORK', 'ACCESS_PERMISSION', 'EMAIL_CLOUD', 'PRINTER', 'SECURITY', 'OTHER'] &&
+             data.priority in ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW'] &&
+             data.status in ['OPEN', 'IN_PROGRESS', 'PENDING_USER', 'PENDING_VENDOR', 'RESOLVED', 'CLOSED'] &&
+             data.companyCode in ['AGIPL', 'ASSPL', 'ONYX'] &&
+             data.requesterName is string && data.requesterName.size() <= 100;
+    }
+
+    function isValidActivityLog(data) {
+      return data.id is string && isValidId(data.id) &&
+             data.action is string && data.action.size() <= 60 &&
+             data.entityType in ['ASSET', 'TICKET', 'USER', 'COMPANY', 'SYSTEM'] &&
+             data.performedBy is string && data.performedBy.size() <= 100;
+    }
+
+    // Companies Collection
+    match /companies/{companyId} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn() && (isSuperAdmin() || isBootstrappedAdmin()) && isValidCompany(incoming());
+    }
+
+    // Users Collection
+    match /users/{userId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && isValidUser(incoming()) && (
+        isSuperAdmin() ||
+        userId == request.auth.uid ||
+        incoming().uid == request.auth.uid
+      );
+      allow update: if isSignedIn() && isValidUser(incoming()) && (
+        isSuperAdmin() ||
+        (userId == request.auth.uid && incoming().role == existing().role)
+      );
+      allow delete: if isSignedIn() && isSuperAdmin();
+    }
+
+    // Assets Collection
+    match /assets/{assetId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && isITStaffOrAdmin() && isValidAsset(incoming());
+      allow update: if isSignedIn() && (
+        (isITStaffOrAdmin() && isValidAsset(incoming())) ||
+        (incoming().diff(existing()).affectedKeys().hasOnly(['lastAuditDate', 'notes', 'status']) && isValidAsset(incoming()))
+      );
+      allow delete: if isSignedIn() && isSuperAdmin();
+    }
+
+    // Tickets Collection
+    match /tickets/{ticketId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && isValidTicket(incoming());
+      allow update: if isSignedIn() && isValidTicket(incoming()) && (
+        isITStaffOrAdmin() ||
+        (existing().requesterId == request.auth.uid && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'rating', 'feedback', 'description', 'updatedAt']))
+      );
+      allow delete: if isSignedIn() && isSuperAdmin();
+    }
+
+    // Activity Logs Collection
+    match /activity_logs/{logId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && isValidActivityLog(incoming());
+      allow update, delete: if false; // Immutable audit trail
+    }
+
+    // System Connection Test Doc
+    match /test/{testId} {
+      allow read, write: if isSignedIn();
+    }
+  }
+}

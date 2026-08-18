@@ -1,0 +1,157 @@
+{
+  "entities": {
+    "Company": {
+      "title": "Company",
+      "description": "Enterprise company entity (AGIPL, ASSPL, ONYX Precision)",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 64, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "name": { "type": "string", "maxLength": 100 },
+        "code": { "type": "string", "maxLength": 20, "enum": ["AGIPL", "ASSPL", "ONYX"] },
+        "fullName": { "type": "string", "maxLength": 150 },
+        "industry": { "type": "string", "maxLength": 100 },
+        "domain": { "type": "string", "maxLength": 100 },
+        "headquarters": { "type": "string", "maxLength": 150 },
+        "contactEmail": { "type": "string", "maxLength": 100 },
+        "contactPhone": { "type": "string", "maxLength": 30 },
+        "departments": { "type": "string", "maxLength": 500 },
+        "createdAt": { "type": "string", "maxLength": 50 },
+        "updatedAt": { "type": "string", "maxLength": 50 }
+      },
+      "required": ["id", "code", "name"]
+    },
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User profile with enterprise company and role mapping",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "uid": { "type": "string", "maxLength": 128 },
+        "name": { "type": "string", "maxLength": 100 },
+        "email": { "type": "string", "maxLength": 120 },
+        "companyId": { "type": "string", "maxLength": 20 },
+        "companyCode": { "type": "string", "maxLength": 20, "enum": ["ALL", "AGIPL", "ASSPL", "ONYX"] },
+        "role": { "type": "string", "maxLength": 30, "enum": ["SUPER_ADMIN", "COMPANY_ADMIN", "IT_STAFF", "EMPLOYEE"] },
+        "department": { "type": "string", "maxLength": 80 },
+        "designation": { "type": "string", "maxLength": 80 },
+        "phoneNumber": { "type": "string", "maxLength": 30 },
+        "status": { "type": "string", "maxLength": 20, "enum": ["ACTIVE", "INACTIVE", "ON_LEAVE"] },
+        "avatarUrl": { "type": "string", "maxLength": 300 },
+        "assignedAssetsCount": { "type": "number" },
+        "createdAt": { "type": "string", "maxLength": 50 },
+        "updatedAt": { "type": "string", "maxLength": 50 }
+      },
+      "required": ["id", "name", "email", "role", "companyCode"]
+    },
+    "Asset": {
+      "title": "Asset",
+      "description": "Enterprise IT Hardware and Software Asset",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "assetTag": { "type": "string", "maxLength": 50, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "name": { "type": "string", "maxLength": 120 },
+        "category": { "type": "string", "maxLength": 40, "enum": ["LAPTOP", "DESKTOP", "SERVER", "NETWORKING", "MONITOR", "PRINTER", "SOFTWARE_LICENSE", "PERIPHERAL", "MOBILE"] },
+        "companyCode": { "type": "string", "maxLength": 20, "enum": ["AGIPL", "ASSPL", "ONYX"] },
+        "companyName": { "type": "string", "maxLength": 100 },
+        "manufacturer": { "type": "string", "maxLength": 80 },
+        "model": { "type": "string", "maxLength": 100 },
+        "serialNumber": { "type": "string", "maxLength": 100 },
+        "specifications": { "type": "string", "maxLength": 500 },
+        "status": { "type": "string", "maxLength": 30, "enum": ["AVAILABLE", "IN_USE", "UNDER_MAINTENANCE", "RESERVED", "RETIRED", "LOST"] },
+        "condition": { "type": "string", "maxLength": 20, "enum": ["EXCELLENT", "GOOD", "FAIR", "POOR"] },
+        "assignedToUserId": { "type": "string", "maxLength": 128 },
+        "assignedToName": { "type": "string", "maxLength": 100 },
+        "assignedToEmail": { "type": "string", "maxLength": 120 },
+        "department": { "type": "string", "maxLength": 80 },
+        "location": { "type": "string", "maxLength": 100 },
+        "purchaseDate": { "type": "string", "maxLength": 40 },
+        "purchaseCost": { "type": "number" },
+        "currency": { "type": "string", "maxLength": 10 },
+        "warrantyExpiry": { "type": "string", "maxLength": 40 },
+        "ipAddress": { "type": "string", "maxLength": 45 },
+        "macAddress": { "type": "string", "maxLength": 30 },
+        "os": { "type": "string", "maxLength": 80 },
+        "lastAuditDate": { "type": "string", "maxLength": 40 },
+        "notes": { "type": "string", "maxLength": 500 },
+        "createdAt": { "type": "string", "maxLength": 50 },
+        "updatedAt": { "type": "string", "maxLength": 50 }
+      },
+      "required": ["id", "assetTag", "name", "category", "companyCode", "status"]
+    },
+    "Ticket": {
+      "title": "Ticket",
+      "description": "IT Help Desk Support Request Ticket",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "ticketNumber": { "type": "string", "maxLength": 40, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "title": { "type": "string", "maxLength": 150 },
+        "description": { "type": "string", "maxLength": 1500 },
+        "category": { "type": "string", "maxLength": 40, "enum": ["HARDWARE", "SOFTWARE", "NETWORK", "ACCESS_PERMISSION", "EMAIL_CLOUD", "PRINTER", "SECURITY", "OTHER"] },
+        "priority": { "type": "string", "maxLength": 20, "enum": ["CRITICAL", "HIGH", "MEDIUM", "LOW"] },
+        "status": { "type": "string", "maxLength": 30, "enum": ["OPEN", "IN_PROGRESS", "PENDING_USER", "PENDING_VENDOR", "RESOLVED", "CLOSED"] },
+        "companyCode": { "type": "string", "maxLength": 20, "enum": ["AGIPL", "ASSPL", "ONYX"] },
+        "companyName": { "type": "string", "maxLength": 100 },
+        "department": { "type": "string", "maxLength": 80 },
+        "requesterId": { "type": "string", "maxLength": 128 },
+        "requesterName": { "type": "string", "maxLength": 100 },
+        "requesterEmail": { "type": "string", "maxLength": 120 },
+        "assignedToId": { "type": "string", "maxLength": 128 },
+        "assignedToName": { "type": "string", "maxLength": 100 },
+        "assetTag": { "type": "string", "maxLength": 50 },
+        "assetName": { "type": "string", "maxLength": 120 },
+        "slaDueTime": { "type": "string", "maxLength": 50 },
+        "slaBreached": { "type": "boolean" },
+        "resolutionSummary": { "type": "string", "maxLength": 1000 },
+        "resolvedAt": { "type": "string", "maxLength": 50 },
+        "closedAt": { "type": "string", "maxLength": 50 },
+        "rating": { "type": "number" },
+        "feedback": { "type": "string", "maxLength": 500 },
+        "createdAt": { "type": "string", "maxLength": 50 },
+        "updatedAt": { "type": "string", "maxLength": 50 }
+      },
+      "required": ["id", "ticketNumber", "title", "category", "priority", "status", "companyCode", "requesterName"]
+    },
+    "ActivityLog": {
+      "title": "ActivityLog",
+      "description": "System and audit log for IT actions and asset history",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "companyCode": { "type": "string", "maxLength": 20 },
+        "action": { "type": "string", "maxLength": 60 },
+        "entityType": { "type": "string", "maxLength": 30, "enum": ["ASSET", "TICKET", "USER", "COMPANY", "SYSTEM"] },
+        "entityId": { "type": "string", "maxLength": 128 },
+        "entityLabel": { "type": "string", "maxLength": 120 },
+        "performedBy": { "type": "string", "maxLength": 100 },
+        "performedByRole": { "type": "string", "maxLength": 30 },
+        "details": { "type": "string", "maxLength": 500 },
+        "timestamp": { "type": "string", "maxLength": 50 }
+      },
+      "required": ["id", "action", "entityType", "performedBy", "timestamp"]
+    }
+  },
+  "firestore": {
+    "/companies/{companyId}": {
+      "schema": "Company",
+      "description": "List of companies supported by the portal (AGIPL, ASSPL, ONYX Precision)"
+    },
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "User profiles, roles, and enterprise company association"
+    },
+    "/assets/{assetId}": {
+      "schema": "Asset",
+      "description": "IT hardware, software, server, and networking assets"
+    },
+    "/tickets/{ticketId}": {
+      "schema": "Ticket",
+      "description": "Help Desk support tickets and resolution logs"
+    },
+    "/activity_logs/{logId}": {
+      "schema": "ActivityLog",
+      "description": "System audit and operation activity feed"
+    }
+  }
+}
